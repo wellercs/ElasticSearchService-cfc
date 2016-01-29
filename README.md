@@ -1,7 +1,7 @@
 # ElasticSearchService-cfc
 
 ### DESCRIPTION
-CFML wrapper for interacting with Elastic Search. Currently uses TCP connections via Elastic Search's TransportClient. REST API support coming soon.
+CFML wrapper for interacting with Elastic Search. Supports Elastic Search's REST API and TCP connections via Elastic Search's TransportClient.
 
 ### SUPPORTED CFML ENGINES
 * Adobe ColdFusion 9.0.1
