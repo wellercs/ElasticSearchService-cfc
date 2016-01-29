@@ -3,10 +3,17 @@
 ### DESCRIPTION
 CFML wrapper for interacting with Elastic Search. Currently uses TCP connections via Elastic Search's TransportClient. REST API support coming soon.
 
+### SUPPORTED CFML ENGINES
+* Adobe ColdFusion 9.0.1
+
 ### DEPENDENCIES
 * elasticsearch jar
 * lucene-core jar
 * [Response.cfc](https://github.com/wellercs/Response-cfc)
+
+### ASSUMPTIONS
+* aggregation results must use key name `aggregation_results`
+* aggregation hits must use key name `agg_hits`
 
 ### Search Example
 ```
