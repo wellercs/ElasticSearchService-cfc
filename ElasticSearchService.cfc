@@ -45,8 +45,6 @@ component {
     * @hint I am the search function.
     * @index I am the name of the search index.
     * @type I am the name of the search type.
-    * @page I am the starting page.
-    * @size I am the number of items in each page.
     * @query_string I am the search query string in JSON format. Mustache example: getMustacheService().render(template=FileRead(getDirectoryFromPath(getCurrentTemplatePath()) & "/my_search_template.txt"), context=arguments)
     * @charset I am the charset of the HTTP request.
     * @method I am the HTTP method.
@@ -57,8 +55,6 @@ component {
 	function search(
 		required string index,
 		required string type,
-		required numeric page,
-		required numeric size,
 		required string query_string,
 		string charset = "UTF-8",
 		string method = "POST",
@@ -73,39 +69,20 @@ component {
 		local.request_start_tick_count = getTickCount();
 
 		try {
+			structAppend(arguments, deserializeJSON(arguments.query_string), true);
+
 			local.return_data["input"]["index"] = arguments.index;
 			local.return_data["input"]["type"] = arguments.type;
-			local.return_data["input"]["page"] = arguments.page;
-			local.return_data["input"]["size"] = arguments.size;
-
-			local.indices = [];
-			arrayAppend(local.indices, arguments.index);
-
-			local.types = [];
-			arrayAppend(local.types, arguments.type);
-
-			if ( arguments.page LTE 0 ) {
-				arguments.page = 1;
-			}
-
-			arguments.from = (arguments.page * arguments.size) - (arguments.size - 1);
-
-			if ( arguments.from LTE 0 ) {
-				arguments.from = 1;
-			}
-
-			arguments.to = (arguments.page * arguments.size);
-
-			arguments.agg_from = arguments.from;
-			arguments.agg_to = arguments.to;
-
-			// always return first page of agg results if agg_size is anything other than 0 to prevent array index not found error
-			if ( NOT structKeyExists(arguments, "agg_size") OR arguments.agg_size NEQ 0 ) {
-				arguments.agg_from = 1;
-				arguments.agg_to = arguments.size;				
-			}
+			local.return_data["input"]["query_string"] = arguments.query_string;
+			local.return_data["input"]["protocol"] = arguments.protocol;
 
 			if ( arguments.protocol IS "TCP" ) {
+				local.indices = [];
+				arrayAppend(local.indices, arguments.index);
+
+				local.types = [];
+				arrayAppend(local.types, arguments.type);
+
 				local.TransportClientSearchRequest = variables.ElasticSearchTransportClient.prepareSearch(local.indices)
 																							.setTypes(local.types)
 																							;
@@ -119,6 +96,11 @@ component {
 										);
 			}
 			else {
+				local.return_data["input"]["charset"] = arguments.charset;
+				local.return_data["input"]["method"] = arguments.method;
+				local.return_data["input"]["search_type"] = arguments.search_type;
+				local.return_data["input"]["timeout"] = arguments.timeout;
+
 				local.ElasticSearchResponse = makeHTTPRequest(
 												httpURL = "#variables.api_base_uri#:9200/#arguments.index#/#arguments.type#/_search?search_type=#arguments.search_type#",
 												httpProperties = {
@@ -188,11 +170,10 @@ component {
 		local.return_data["input"]["requesturl"] = arguments.response.getData().requestData.httpProperties.url;
 		local.return_data["output"]["recordcount"] = arguments.response.getData().parsedFileContent.hits.total;
 		if ( structKeyExists(arguments.response.getData(), "parsedFileContent") AND structKeyExists(arguments.response.getData().parsedFileContent, "aggregations") ) {
-			// TOFIX: agg_from is undefined
 			local.agg = {};
 			local.aggs = [];
 			local.agg_len = arrayLen(arguments.response.getData().parsedFileContent.aggregations.aggregation_results.buckets); // TODO: make aggregation_results dynamic
-			for ( local.a = arguments.search_params.agg_from; local.a <= local.agg_len; local.a++ ) {
+			for ( local.a = 1; local.a <= local.agg_len; local.a++ ) {
 				local.agg = arguments.response.getData().parsedFileContent.aggregations.aggregation_results.buckets[local.a]; // TODO: make aggregation_results dynamic
 				if ( structKeyExists(local.agg, "agg_hits") ) {
 					arrayAppend(local.aggs, local.agg.agg_hits.hits.hits[1]); // TODO: make agg_hits dynamic
@@ -259,11 +240,10 @@ component {
 			local.return_data["output"]["results"] = local.response_struct.hits.hits;
 		}
 		else {
-			// TOFIX: agg_from is undefined
 			local.agg = {};
 			local.aggs = [];
 			local.agg_len = arrayLen(local.response_struct.aggregations.aggregation_results.buckets); // TODO: make aggregation_results dynamic
-			for ( local.a = arguments.search_params.agg_from; local.a <= local.agg_len; local.a++ ) {
+			for ( local.a = 1; local.a <= local.agg_len; local.a++ ) {
 				local.agg = local.response_struct.aggregations.aggregation_results.buckets[local.a]; // TODO: make aggregation_results dynamic
 				if ( structKeyExists(local.agg, "agg_hits") ) {
 					arrayAppend(local.aggs, local.agg.agg_hits.hits.hits[1]); // TODO: make agg_hits dynamic
