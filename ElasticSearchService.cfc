@@ -3,40 +3,49 @@ component {
 
     /**
     * @hint I initialize the component.
+    * @api_base_uri I am the base URI of the API.
     * @cluster_name I am the cluster name.
     * @master_node I am the master node.
-    * @api_base_uri I am the base URI of the API.
+    * @loadPaths An array of directories of classes, or paths to .jar files to load.
+    * @loadColdFusionClassPath Determines whether to load the ColdFusion libraries with the loaded libraries.
     */
 	function init(
-		required string cluster_name,
-		required string master_node,
-		string api_base_uri = ""
+		string api_base_uri = "",
+		string cluster_name = "",
+		string master_node = "",
+		array loadPaths = [],
+		boolean loadColdFusionClassPath = false
 	) {
+		variables.api_base_uri = arguments.api_base_uri;
 		variables.cluster_name = arguments.cluster_name;
 		variables.master_node = arguments.master_node;
-		variables.api_base_uri = arguments.api_base_uri;
 
-		variables.jImmutableSettings = createObject("java", "org.elasticsearch.common.settings.ImmutableSettings");
-		variables.jInetAddress = createObject("java", "java.net.InetAddress");
-		variables.jInetSocketTransportAddress = createObject("java", "org.elasticsearch.common.transport.InetSocketTransportAddress");
-		variables.jElasticSearchSettings = createObject("java", "org.elasticsearch.common.settings.Settings");
-		variables.jTransportClient = createObject("java", "org.elasticsearch.client.transport.TransportClient");
-		variables.jFuzzinessUnit = createObject("java", "org.elasticsearch.common.unit.Fuzziness");
-		variables.jCompletionSuggestionFuzzyBuilder = createObject("java", "org.elasticsearch.search.suggest.completion.CompletionSuggestionFuzzyBuilder");
+		if ( arrayLen(arguments.loadPaths) OR arguments.loadColdFusionClassPath ) {
+			variables.JavaLoader = new JavaLoader.javaloader.JavaLoader(arguments.loadPaths, arguments.loadColdFusionClassPath);
 
-		variables.ElasticSearchSettings = variables.jImmutableSettings.settingsBuilder()
-																	.put("client.transport.sniff", true)
-																	.put("cluster.name", variables.cluster_name)
-																	.build();
+			variables.jImmutableSettings = variables.JavaLoader.create("org.elasticsearch.common.settings.ImmutableSettings");
+			variables.jInetSocketTransportAddress = variables.JavaLoader.create("org.elasticsearch.common.transport.InetSocketTransportAddress");
+			variables.jElasticSearchSettings = variables.JavaLoader.create("org.elasticsearch.common.settings.Settings");
+			variables.jTransportClient = variables.JavaLoader.create("org.elasticsearch.client.transport.TransportClient");
+			variables.jFuzzinessUnit = variables.JavaLoader.create("org.elasticsearch.common.unit.Fuzziness");
+			variables.jCompletionSuggestionFuzzyBuilder = variables.JavaLoader.create("org.elasticsearch.search.suggest.completion.CompletionSuggestionFuzzyBuilder");
 
-		variables.ElasticSearchTransportClient = variables.jTransportClient.init(variables.ElasticSearchSettings)
-															.addTransportAddress(variables.jInetSocketTransportAddress.init(variables.jInetAddress.getByName(variables.master_node).getHostAddress(), 9300));
+			variables.jInetAddress = createObject("java", "java.net.InetAddress");
 
-		// close all resources
-		//client.close()
+			variables.ElasticSearchSettings = variables.jImmutableSettings.settingsBuilder()
+																		.put("client.transport.sniff", true)
+																		.put("cluster.name", variables.cluster_name)
+																		.build();
 
-		// release the thread pool
-		//client.threadPool().shutdown()
+			variables.ElasticSearchTransportClient = variables.jTransportClient.init(variables.ElasticSearchSettings)
+																.addTransportAddress(variables.jInetSocketTransportAddress.init(variables.jInetAddress.getByName(variables.master_node).getHostAddress(), 9300));
+
+			// close all resources
+			//client.close()
+
+			// release the thread pool
+			//client.threadPool().shutdown()
+		}
 
 		return this;
 	}
