@@ -6,6 +6,7 @@ component {
     * @api_base_uri I am the base URI of the API.
     * @cluster_name I am the cluster name.
     * @master_node I am the master node.
+    * @javaloaderMapping I am the mapping to the JavaLoader object.
     * @loadPaths An array of directories of classes, or paths to .jar files to load.
     * @loadColdFusionClassPath Determines whether to load the ColdFusion libraries with the loaded libraries.
     */
@@ -13,6 +14,7 @@ component {
 		string api_base_uri = "",
 		string cluster_name = "",
 		string master_node = "",
+		string javaloaderMapping = "",
 		array loadPaths = [],
 		boolean loadColdFusionClassPath = false
 	) {
@@ -20,15 +22,32 @@ component {
 		variables.cluster_name = arguments.cluster_name;
 		variables.master_node = arguments.master_node;
 
-		if ( arrayLen(arguments.loadPaths) OR arguments.loadColdFusionClassPath ) {
-			variables.JavaLoader = new JavaLoader.javaloader.JavaLoader(arguments.loadPaths, arguments.loadColdFusionClassPath);
+		local.loadJars = false;
+		if ( len(trim(arguments.javaloaderMapping)) OR (len(trim(arguments.cluster_name)) AND len(trim(arguments.master_node))) ) {
+			local.loadJars = true;
+		}
 
-			variables.jImmutableSettings = variables.JavaLoader.create("org.elasticsearch.common.settings.ImmutableSettings");
-			variables.jInetSocketTransportAddress = variables.JavaLoader.create("org.elasticsearch.common.transport.InetSocketTransportAddress");
-			variables.jElasticSearchSettings = variables.JavaLoader.create("org.elasticsearch.common.settings.Settings");
-			variables.jTransportClient = variables.JavaLoader.create("org.elasticsearch.client.transport.TransportClient");
-			variables.jFuzzinessUnit = variables.JavaLoader.create("org.elasticsearch.common.unit.Fuzziness");
-			variables.jCompletionSuggestionFuzzyBuilder = variables.JavaLoader.create("org.elasticsearch.search.suggest.completion.CompletionSuggestionFuzzyBuilder");
+		if ( local.loadJars ) {
+			local.jars = [
+				{ name="jImmutableSettings", path="org.elasticsearch.common.settings.ImmutableSettings" },
+				{ name="jInetSocketTransportAddress", path="org.elasticsearch.common.transport.InetSocketTransportAddress" },
+				{ name="jElasticSearchSettings", path="org.elasticsearch.common.settings.Settings" },
+				{ name="jTransportClient", path="org.elasticsearch.client.transport.TransportClient" },
+				{ name="jFuzzinessUnit", path="org.elasticsearch.common.unit.Fuzziness" },
+				{ name="jCompletionSuggestionFuzzyBuilder", path="org.elasticsearch.search.suggest.completion.CompletionSuggestionFuzzyBuilder" }
+			];
+
+			if ( len(trim(arguments.javaloaderMapping)) ) {
+				variables.JavaLoader = new "#arguments.javaloaderMapping#"(arguments.loadPaths, arguments.loadColdFusionClassPath);
+				for ( local.jar in local.jars ) {
+					variables[local.jar.name] = variables.JavaLoader.create(local.jar.path);
+				}
+			}
+			else {
+				for ( local.jar in local.jars ) {
+					variables[local.jar.name] = createObject("java", local.jar.path);
+				}
+			}
 
 			variables.jInetAddress = createObject("java", "java.net.InetAddress");
 
