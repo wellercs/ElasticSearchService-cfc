@@ -6,18 +6,50 @@ CFML wrapper for interacting with Elastic Search. Supports Elastic Search's REST
 ### SUPPORTED CFML ENGINES
 * Adobe ColdFusion 9.0.1
 
-### DEPENDENCIES
+### REQUIRED DEPENDENCIES (HTTP OR TCP)
+* [Response.cfc](https://github.com/wellercs/Response-cfc)
+
+### REQUIRED DEPENDENCIES FOR TCP
 * elasticsearch jar
 * lucene-core jar
-* [Response.cfc](https://github.com/wellercs/Response-cfc)
+
+### OPTIONAL DEPENDENCIES FOR TCP
+* [JavaLoader](https://github.com/markmandel/JavaLoader)
 
 ### ASSUMPTIONS
 * aggregation results must use key name `aggregation_results`
 * aggregation hits must use key name `agg_hits`
 
+### Service Constructor when using HTTP
+```
+ElasticSearchService = new ElasticSearchService(
+	api_base_uri=""
+);
+```
+
+### Service Constructor when using TCP without JavaLoader
+```
+ElasticSearchService = new ElasticSearchService(
+	cluster_name="",
+	master_node=""
+);
+```
+
+### Service Constructor when using TCP with JavaLoader
+```
+ElasticSearchService = new ElasticSearchService(
+	cluster_name="",
+	master_node="",
+	javaloaderMapping="",
+	loadPaths=[
+		"path/to/elasticsearch-1.6.0.jar",
+		"path/to/lucene-core-4.10.4.jar"
+	]
+);
+```
+
 ### Search Example
 ```
-ElasticSearchService = new ElasticSearchService(cluster_name="", master_node="", api_base_uri="");
 response = ElasticSearchService.search(
 	index = "dev",
 	type = "product",
@@ -29,7 +61,6 @@ response = ElasticSearchService.search(
 
 ### Suggest Example
 ```
-ElasticSearchService = new ElasticSearchService(cluster_name="", master_node="", api_base_uri="");
 response = ElasticSearchService.suggest(
 	context_field_name = "brand_id",
 	context_field_value = "123",
