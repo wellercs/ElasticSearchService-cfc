@@ -5,6 +5,9 @@ CFML wrapper for interacting with Elastic Search. Supports Elastic Search's REST
 
 ### SUPPORTED CFML ENGINES
 * Adobe ColdFusion 9.0.1
+* Adobe ColdFusion 10
+* Adobe ColdFusion 11
+* Lucee 4.5
 
 ### REQUIRED DEPENDENCIES (HTTP OR TCP)
 * [Response.cfc](https://github.com/wellercs/Response-cfc)
