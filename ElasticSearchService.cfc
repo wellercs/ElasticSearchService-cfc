@@ -4,23 +4,29 @@ component {
     /**
     * @hint I initialize the component.
     * @api_base_uri I am the base URI of the API.
+    * @http_port I am the port number to use for the REST API.
     * @cluster_name I am the cluster name.
     * @master_node I am the master node.
+    * @tcp_port I am the port number to use for TCP communication.
     * @javaloaderMapping I am the mapping to the JavaLoader object.
     * @loadPaths An array of directories of classes, or paths to .jar files to load.
     * @loadColdFusionClassPath Determines whether to load the ColdFusion libraries with the loaded libraries.
     */
 	function init(
 		string api_base_uri = "",
+		numeric http_port = 9200,
 		string cluster_name = "",
 		string master_node = "",
+		numeric tcp_port = 9300,
 		string javaloaderMapping = "",
 		array loadPaths = [],
 		boolean loadColdFusionClassPath = false
 	) {
 		variables.api_base_uri = arguments.api_base_uri;
+		variables.http_port = arguments.http_port;
 		variables.cluster_name = arguments.cluster_name;
 		variables.master_node = arguments.master_node;
+		variables.tcp_port = arguments.tcp_port;
 
 		local.loadJars = false;
 		if ( len(trim(arguments.javaloaderMapping)) OR (len(trim(arguments.cluster_name)) AND len(trim(arguments.master_node))) ) {
@@ -57,7 +63,7 @@ component {
 																		.build();
 
 			variables.ElasticSearchTransportClient = variables.jTransportClient.init(variables.ElasticSearchSettings)
-																.addTransportAddress(variables.jInetSocketTransportAddress.init(variables.jInetAddress.getByName(variables.master_node).getHostAddress(), 9300));
+																.addTransportAddress(variables.jInetSocketTransportAddress.init(variables.jInetAddress.getByName(variables.master_node).getHostAddress(), variables.tcp_port));
 
 			// close all resources
 			//client.close()
@@ -130,7 +136,7 @@ component {
 				local.return_data["input"]["timeout"] = arguments.timeout;
 
 				local.ElasticSearchResponse = makeHTTPRequest(
-												httpURL = "#variables.api_base_uri#:9200/#arguments.index#/#arguments.type#/_search?search_type=#arguments.search_type#",
+												httpURL = "#variables.api_base_uri#:#variables.http_port#/#arguments.index#/#arguments.type#/_search?search_type=#arguments.search_type#",
 												httpProperties = {
 													charset = arguments.charset,
 													method = arguments.method,
@@ -138,6 +144,10 @@ component {
 												},
 												httpBodyParameter = arguments.query_string
 											);
+
+				if ( NOT local.ElasticSearchResponse.getSuccess() ) {
+					return local.ElasticSearchResponse;
+				}
 
 				local.handled_response = handleHTTPSearchResponse(
 											search_params = arguments,
@@ -372,7 +382,7 @@ component {
 			}
 			else {
 				local.ElasticSearchResponse = makeHTTPRequest(
-												httpURL = "#variables.api_base_uri#:9200/#arguments.index#/_suggest",
+												httpURL = "#variables.api_base_uri#:#variables.http_port#/#arguments.index#/_suggest",
 												httpProperties = {
 													charset = arguments.charset,
 													method = arguments.method,
@@ -387,6 +397,10 @@ component {
 																		text = arguments.text
 																	)
 											);
+
+				if ( NOT local.ElasticSearchResponse.getSuccess() ) {
+					return local.ElasticSearchResponse;
+				}
 
 				local.handled_response = handleHTTPSuggestResponse(
 											response = local.ElasticSearchResponse
@@ -561,8 +575,8 @@ component {
 			local.httpService.setURL(arguments.httpURL);
 
 			// TODO: use this for CF10+
-			// for ( local.httpProperty in local.httpProperties ) {
-			// 	invoke(local.httpService, "set#local.httpProperty#", {"#local.httpProperty#"=local.httpProperties[local.httpProperty]});
+			// for ( local.httpProperty in arguments.httpProperties ) {
+			// 	invoke(local.httpService, "set#local.httpProperty#", {"#local.httpProperty#"=arguments.httpProperties[local.httpProperty]});
 			// }
 
 			// BEGIN: remove this block for CF10+
