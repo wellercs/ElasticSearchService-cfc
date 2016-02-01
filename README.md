@@ -51,20 +51,43 @@ ElasticSearchService = new ElasticSearchService(
 );
 ```
 
-### Search Example
+### HTTP Search Example
 ```
 response = ElasticSearchService.search(
+	protocol = "HTTP",
 	index = "dev",
 	type = "product",
-	page = 1,
-	size = 10,
 	query_string = '{"timeout": 30,"_source": ["label","retail_unit_price"],"from": 0,"size": 10,"sort":[{"retail_unit_price": {"order": "asc"}},{"label": {"order": "asc"}}],"query":{"filtered":{"filter":{"and":[{"bool":{"must":{"term":{"store_group_id":9}}}},{"bool":{"must":{"range":{"date_expected":{"lte":"2016-01-27"}}}}},{"bool":{"should":{"term":{"default_product_category_id":97}}}}]}}}}'		
 );
 ```
 
-### Suggest Example
+### TCP Search Example
+```
+response = ElasticSearchService.search(
+	protocol = "TCP",
+	index = "dev",
+	type = "product",
+	query_string = '{"timeout": 30,"_source": ["label","retail_unit_price"],"from": 0,"size": 10,"sort":[{"retail_unit_price": {"order": "asc"}},{"label": {"order": "asc"}}],"query":{"filtered":{"filter":{"and":[{"bool":{"must":{"term":{"store_group_id":9}}}},{"bool":{"must":{"range":{"date_expected":{"lte":"2016-01-27"}}}}},{"bool":{"should":{"term":{"default_product_category_id":97}}}}]}}}}'		
+);
+```
+
+### HTTP Suggest Example
 ```
 response = ElasticSearchService.suggest(
+	protocol = "HTTP",
+	context_field_name = "brand_id",
+	context_field_value = "123",
+	index = "dev",
+	size = 10,
+	text='My Awesome Product',
+	fuzziness="auto"		
+);
+```
+
+### TCP Suggest Example
+```
+response = ElasticSearchService.suggest(
+	protocol = "TCP",
 	context_field_name = "brand_id",
 	context_field_value = "123",
 	index = "dev",
