@@ -156,7 +156,12 @@ component {
 			}
 
 			structAppend(local.return_data, local.handled_response.getData(), true);
-			local.return_data["output"]["pages"] = ceiling(local.return_data.output.recordcount / arguments.size);
+			if ( arrayLen(local.return_data.output.results) ) {
+				local.return_data["output"]["pages"] = ceiling(local.return_data.output.recordcount / arrayLen(local.return_data.output.results));
+			}
+			else {
+				local.return_data["output"]["pages"] = 0;
+			}
 
 			local.ResponseObj.setSuccess(local.handled_response.getSuccess());
 			local.ResponseObj.setStatusText(local.handled_response.getStatusText());
@@ -408,7 +413,12 @@ component {
 			}
 
 			structAppend(local.return_data, local.handled_response.getData(), true);
-			local.return_data["output"]["pages"] = ceiling(local.return_data.output.recordcount / arguments.size);
+			if ( arrayLen(local.return_data.output.results) ) {
+				local.return_data["output"]["pages"] = ceiling(local.return_data.output.recordcount / arrayLen(local.return_data.output.results));
+			}
+			else {
+				local.return_data["output"]["pages"] = 0;
+			}
 
 			local.ResponseObj.setSuccess(local.handled_response.getSuccess());
 			local.ResponseObj.setStatusText(local.handled_response.getStatusText());
